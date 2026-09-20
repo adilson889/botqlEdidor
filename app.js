@@ -979,6 +979,22 @@ const MODELOS_CACHE_KEY = 'botql_editor_online_modelos_cache';
 
     // Comprime a imagem via canvas (lado maior 1280px, JPEG 0.7) e
     // guarda só o base64 puro, como o servidor espera.
+    // Bloqueia a folha (impede toques) e mostra spinner enquanto algo
+    // demorado corre — ex: comprimir a foto do comprovativo.
+    function mostrarCarregandoFolha(texto) {
+        esconderCarregandoFolha();
+        const caixa = document.getElementById('folha-caixa');
+        if (!caixa) return;
+        const d = document.createElement('div');
+        d.id = 'folha-carregando';
+        d.innerHTML = '<div class="spinner"></div><span>' + escapeHtml(texto || 'A carregar...') + '</span>';
+        caixa.appendChild(d);
+    }
+    function esconderCarregandoFolha() {
+        const d = document.getElementById('folha-carregando');
+        if (d) d.remove();
+    }
+
     function escolherComprovativo(input) {
         const f = input.files && input.files[0];
         fotoComprovativo = null;
@@ -986,23 +1002,37 @@ const MODELOS_CACHE_KEY = 'botql_editor_online_modelos_cache';
         miniaturaComprovativo = '';
         if (!f) return;
         nomeFotoComprovativo = f.name;
+        mostrarCarregandoFolha('A processar imagem...');
         const leitor = new FileReader();
+        leitor.onerror = () => {
+            esconderCarregandoFolha();
+            mostrarErroPremium('Não foi possível ler o ficheiro. Tenta outra imagem.');
+        };
         leitor.onload = () => {
             const img = new Image();
             img.onload = () => {
-                const max = 1280;
-                const escala = Math.min(1, max / Math.max(img.width, img.height));
-                const canvas = document.createElement('canvas');
-                canvas.width = Math.round(img.width * escala);
-                canvas.height = Math.round(img.height * escala);
-                canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-                fotoComprovativo = dataUrl.split(',')[1];
-                miniaturaComprovativo = dataUrl;
-                mostrarErroPremium('');
-                marcarFotoAnexada();
+                try {
+                    const max = 1280;
+                    const escala = Math.min(1, max / Math.max(img.width, img.height));
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.max(1, Math.round(img.width * escala));
+                    canvas.height = Math.max(1, Math.round(img.height * escala));
+                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                    fotoComprovativo = dataUrl.split(',')[1];
+                    miniaturaComprovativo = dataUrl;
+                    mostrarErroPremium('');
+                    marcarFotoAnexada();
+                } catch (e) {
+                    mostrarErroPremium('Não foi possível processar essa imagem. Tenta outra.');
+                } finally {
+                    esconderCarregandoFolha();
+                }
             };
-            img.onerror = () => mostrarErroPremium('Não foi possível ler essa imagem. Tenta outra.');
+            img.onerror = () => {
+                esconderCarregandoFolha();
+                mostrarErroPremium('Não foi possível ler essa imagem (formato não suportado). Tenta outra.');
+            };
             img.src = leitor.result;
         };
         leitor.readAsDataURL(f);
@@ -1015,6 +1045,7 @@ const MODELOS_CACHE_KEY = 'botql_editor_online_modelos_cache';
         const btn = document.getElementById('btn-enviar-premium');
         if (btn) btn.disabled = true;
         mostrarErroPremium('');
+        mostrarCarregandoFolha('A enviar...');
         try {
             const resp = await fetch(URL_API_BOTQL + '/api/premium/solicitar', {
                 method: 'POST',
@@ -1036,6 +1067,8 @@ const MODELOS_CACHE_KEY = 'botql_editor_online_modelos_cache';
         } catch (e) {
             mostrarErroPremium((e && e.message) || 'Não foi possível enviar. Verifica a ligação e tenta de novo.');
             if (btn) btn.disabled = false;
+        } finally {
+            esconderCarregandoFolha();
         }
     }
 
