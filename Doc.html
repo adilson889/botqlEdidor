@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Documentação — BotQL</title>
+<style>
+:root {
+--bg: #F4EFE9;
+--bg2: #FFFFFF;
+--bg3: #EBE5DD;
+--border: #DDD5CB;
+--text: #1A1A1A;
+--muted: #7A6A5E;
+--r: #8B0000;
+--r2: #A52A2A;
+--blue: #1565C0;
+--blue-light: #E3F2FD;
+--code-bg: #FFFFFF;
+}
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body {
+margin:0; padding:0; height:100%;
+background:var(--bg); color:var(--text);
+font-family: Georgia, 'Times New Roman', Times, serif;
+}
+#statusbar {
+background:var(--r);
+padding:12px 16px;
+display:flex;
+align-items:center;
+gap:12px;
+position:sticky;
+top:0;
+z-index:10;
+}
+#btn-voltar {
+width:26px; height:26px;
+background:none; border:none; padding:0;
+cursor:pointer; flex-shrink:0;
+}
+#btn-voltar svg { width:100%; height:100%; }
+.title { color:#fff; font-weight:bold; font-size:15px; letter-spacing:2px; text-transform:uppercase; flex:1; }
+
+#busca-wrap { padding:12px 16px; background:var(--bg2); border-bottom:1px solid var(--border); position:sticky; top:52px; z-index:9; }
+#busca-input {
+width:100%;
+padding:10px 14px;
+border:1px solid var(--border);
+border-radius:20px;
+background:var(--bg);
+color:var(--text);
+font-family:inherit;
+font-size:14px;
+}
+#busca-info { font-size:12px; color:var(--muted); margin-top:6px; padding-left:4px; display:none; }
+
+#conteudo { padding:16px 18px 60px; max-width:800px; margin:0 auto; }
+
+section { margin-bottom:34px; }
+section.escondida { display:none; }
+
+h1 { font-size:22px; color:var(--r); margin:0 0 6px; }
+h2 { font-size:19px; color:var(--r); border-bottom:2px solid var(--border); padding-bottom:6px; margin-top:0; }
+h3 { font-size:16px; color:var(--r2); margin-bottom:6px; }
+p { line-height:1.6; text-align:justify; }
+b { color:inherit; }
+code { font-family: ui-monospace, Menlo, Consolas, monospace; background:var(--bg3); padding:1px 5px; border-radius:4px; font-size:0.92em; }
+pre {
+background:#0d1117;
+border-radius:8px;
+padding:12px 14px;
+overflow-x:auto;
+font-family: ui-monospace, Menlo, Consolas, monospace;
+font-size:13px;
+line-height:1.5;
+}
+pre code { background:none; padding:0; border-radius:0; color:#c9d1d9; }
+
+/* Tema de cores do highlight.js (GitHub Dark) — mesmo tema usado no
+Preview do index.html, aplicado aqui aos blocos <pre><code> da doc. */
+pre code.hljs { display:block; overflow-x:auto; }
+.hljs-doctag, .hljs-keyword, .hljs-meta .hljs-keyword,
+.hljs-template-tag, .hljs-template-variable, .hljs-type { color:#ff7b72; }
+.hljs-title { color:#d2a8ff; }
+.hljs-attr, .hljs-attribute, .hljs-literal, .hljs-meta, .hljs-number,
+.hljs-selector-attr, .hljs-selector-class, .hljs-selector-id,
+.hljs-variable { color:#79c0ff; }
+.hljs-meta .hljs-string, .hljs-regexp, .hljs-string { color:#a5d6ff; }
+.hljs-built_in, .hljs-class .hljs-title, .hljs-symbol,
+.hljs-title.class_ { color:#ffa657; }
+.hljs-code, .hljs-comment, .hljs-formula { color:#8b949e; }
+.hljs-name, .hljs-quote, .hljs-selector-pseudo,
+.hljs-selector-tag { color:#7ee787; }
+.hljs-subst { color:#c9d1d9; }
+.hljs-section { color:#79c0ff; font-weight:700; }
+.hljs-bullet { color:#f2cc60; }
+.hljs-emphasis { color:#c9d1d9; font-style:italic; }
+.hljs-strong { color:#c9d1d9; font-weight:700; }
+.hljs-addition { color:#aff5b4; background-color:#033a16; }
+.hljs-deletion { color:#ffdcd7; background-color:#67060c; }
+
+hr { border:none; border-top:1px solid var(--border); margin:22px 0; }
+ul, ol { line-height:1.6; padding-left:22px; }
+table { width:100%; border-collapse:collapse; margin:12px 0; font-size:13px; }
+th, td { border:1px solid var(--border); padding:8px 10px; text-align:left; vertical-align:top; }
+th { background:var(--bg3); font-weight:bold; }
+td code, th code { white-space:nowrap; }
+
+#toc { background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:28px; }
+#toc h2 { border:none; margin-bottom:10px; font-size:16px; }
+#toc ul { columns:1; padding-left:18px; margin:0; }
+#toc a { color:var(--blue); text-decoration:none; font-size:14px; }
+#toc a:active { opacity:0.6; }
+
+#sem-resultados { display:none; text-align:center; color:var(--muted); padding:40px 20px; font-style:italic; }
+</style>
+</head>
+<body>
+
+<div id="statusbar">
+<button id="btn-voltar" onclick="voltar()">
+<svg viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+</button>
+<span class="title">Documentação BotQL</span>
+</div>
+
+<div id="busca-wrap">
+<input id="busca-input" type="text" placeholder="Pesquisar na documentação... (ex: THINK, WAITING, CONTAINS)" oninput="filtrar()">
+<div id="busca-info"></div>
+</div>
+
+<div id="conteudo">
+
+<section data-titulo="introdução botql bot query language">
+<h1>BotQL:Bot Query Language</h1>
+<p align="justify"><b>BotQL</b> é uma <b>linguagem de regras</b> simples, inspirada em SQL, para criar bots sem precisar de escrever código tradicional.</p>
+<p align="justify">Todos os comandos são escritos em <b>MAIÚSCULAS</b>. Blocos com mais de uma ação usam chaves <code>{ }</code>.</p>
+<p align="justify">Vive no mesmo ficheiro <code>.sql</code>, com comandos reais de banco de dados — o bot age e persiste dados na mesma linguagem, sem sair do BotQL.</p>
+</section>
+
+<nav id="toc">
+<h2>Índice</h2>
+<ul>
+<li><a href="#estrutura">Estrutura Geral</a></li>
+<li><a href="#palavras-chave">Palavras-chave</a></li>
+<li><a href="#contains">CONTAINS: as três formas</a></li>
+<li><a href="#reply-ficheiro">REPLY a partir de um ficheiro indexado</a></li>
+<li><a href="#import">IMPORT: as duas formas</a></li>
+<li><a href="#connect-response">CONNECT RESPONSE e Response()</a></li>
+<li><a href="#think">THINK: retrieval local</a></li>
+<li><a href="#catalogo">SHOW CATALOG / SHOW CATEGORY</a></li>
+<li><a href="#default-message">DEFAULT MESSAGE</a></li>
+<li><a href="#env">A convenção env.txt</a></li>
+<li><a href="#seguranca">Segurança: env.txt</a></li>
+<li><a href="#eventos">Eventos disponíveis</a></li>
+<li><a href="#variaveis">Variáveis implícitas</a></li>
+<li><a href="#banco">Integração com Banco de Dados</a></li>
+<li><a href="#exemplos">Exemplos</a></li>
+<li><a href="#regras">Regras de sintaxe</a></li>
+<li><a href="#filosofia">Filosofia</a></li>
+<li><a href="#onde-corre">Onde o bot corre</a></li>
+</ul>
+</nav>
+
+<section id="estrutura" data-titulo="estrutura geral create bot platform connect table on run">
+<h2>Estrutura Geral</h2>
+<pre><code>IMPORT {ficheiro.sql}
+
+CREATE BOT "NomeDoBot"
+PLATFORM &lt;PLATAFORMA&gt;
+
+CONNECT &lt;SERVIÇO&gt; &lt;TIPO&gt; "&lt;credencial&gt;"
+
+CREATE TABLE &lt;tabela&gt; (&lt;colunas&gt;) [PREVENT DEFAULT] [DEFAULT MESSAGE ...]
+
+ON &lt;EVENTO&gt; {
+&lt;AÇÃO&gt;
+&lt;AÇÃO&gt;
+}
+
+RUN BOT</code></pre>
+</section>
+
+<section id="palavras-chave" data-titulo="palavras-chave keywords comandos tabela">
+<h2>Palavras-chave</h2>
+<table>
+<tr><th>Comando</th><th>Descrição</th></tr>
+<tr><td><code>CREATE BOT "nome"</code></td><td>Cria um novo bot com o nome indicado</td></tr>
+<tr><td><code>PLATFORM</code></td><td>Define a plataforma principal (WHATSAPP, TELEGRAM, DISCORD)</td></tr>
+<tr><td><code>CONNECT</code></td><td>Liga o bot a um serviço externo (canal, conta, API)</td></tr>
+<tr><td><code>CONNECT RESPONSE &lt;alias&gt;</code></td><td>Liga o bot a uma IA usando um valor já importado (token) — só liga, não dispara nada sozinho</td></tr>
+<tr><td><code>CREATE TABLE</code></td><td>Cria uma tabela para guardar dados do bot</td></tr>
+<tr><td><code>PREVENT DEFAULT</code></td><td>Modificador do CREATE TABLE: cria só se não existir, sem erro se já existir</td></tr>
+<tr><td><code>DEFAULT MESSAGE</code></td><td>Modificador do CREATE TABLE: mensagem enviada automaticamente na primeira vez que um client aparece nessa tabela</td></tr>
+<tr><td><code>Context()</code></td><td>Nome de tabela reservado — schema pré-mapeado no interpretador, sem precisar declarar colunas</td></tr>
+<tr><td><code>INSERT INTO</code></td><td>Guarda uma nova linha na tabela</td></tr>
+<tr><td><code>UPDATE</code> / <code>SET</code> / <code>WHERE</code></td><td>Atualiza uma linha existente</td></tr>
+<tr><td><code>LAST_INSERT_ID()</code></td><td>Referencia o id da última linha inserida</td></tr>
+<tr><td><code>ON</code></td><td>Define um evento que dispara ações</td></tr>
+<tr><td><code>CONTAINS</code></td><td>Verifica se uma mensagem contém um texto (palavra, lista inline, ou ficheiro .txt)</td></tr>
+<tr><td><code>OR</code></td><td>Combina múltiplas condições</td></tr>
+<tr><td><code>WHEN</code></td><td>Testa uma condição dentro de um bloco ON MESSAGE</td></tr>
+<tr><td><code>OTHERWISE</code></td><td>Ação padrão quando nenhum WHEN é satisfeito</td></tr>
+<tr><td><code>REPLY</code></td><td>Envia uma resposta de texto (direto ou de um ficheiro indexado)</td></tr>
+<tr><td><code>FORWARD TO</code></td><td>Reencaminha a mensagem para outro contacto/canal</td></tr>
+<tr><td><code>PARSE SIGNAL</code></td><td>Interpreta um sinal recebido (ex: sinais de trading)</td></tr>
+<tr><td><code>SEND TO</code></td><td>Envia dados/sinal para outra plataforma</td></tr>
+<tr><td><code>START</code></td><td>Evento disparado quando o bot arranca</td></tr>
+<tr><td><code>RUN BOT</code></td><td>Inicia a execução do bot</td></tr>
+<tr><td><code>IMPORT {ficheiro.sql}</code></td><td>Importa e junta o conteúdo de outro ficheiro .sql antes de correr</td></tr>
+<tr><td><code>IMPORT {ficheiro.txt, N}</code></td><td>Lê só a entrada N de um ficheiro de valores, sem importar código</td></tr>
+<tr><td><code>IMPORT {..., N} AS &lt;alias&gt;</code></td><td>Dá nome a um valor importado, para referenciar depois pelo alias</td></tr>
+<tr><td><code>Response()</code> / <code>Response(&lt;alias&gt;)</code></td><td>Dispara o ciclo: envia a mensagem atual para a IA ligada, espera e devolve a resposta</td></tr>
+<tr><td><code>THINK(ficheiro.txt)</code></td><td>Retrieval local (sem IA, sem rede) sobre um ficheiro de conhecimento</td></tr>
+<tr><td><code>THINK(...) OR REPLY ...</code></td><td>Mesmo que acima, com fallback explícito</td></tr>
+<tr><td><code>WAITING(...)</code></td><td>Texto/animação de "a processar", com tempo mínimo — acoplado a THINK ou sozinho</td></tr>
+<tr><td><code>SHOW CATALOG(ficheiro.txt)</code></td><td>Mostra os itens de um ficheiro de catálogo — todas as categorias juntas, ou só uma com <code>CATEGORY("...")</code></td></tr>
+<tr><td><code>SHOW CATEGORY(ficheiro.txt)</code></td><td>Sozinho (fora de um CATALOG): mostra só os nomes das categorias do ficheiro</td></tr>
+</table>
+</section>
+
+<section id="contains" data-titulo="contains palavra lista inline keywords ficheiro case-insensitive">
+<h2>CONTAINS: as três formas</h2>
+<p align="justify">Todas as formas de <code>CONTAINS</code> são <b>case-insensitive</b> ("OLA", "Ola" e "ola" batem todas com <code>CONTAINS "ola"</code>) e podem ser combinadas com <code>OR</code> dentro do mesmo <code>WHEN</code>.</p>
+
+<h3>1. Palavra única (forma original)</h3>
+<pre><code>WHEN CONTAINS "oi" OR CONTAINS "ola" {
+REPLY "Ola! Como posso ajudar?"
+}</code></pre>
+<p align="justify">Prático para 2-3 palavras. Para listas maiores, repetir <code>OR CONTAINS</code> fica longo e difícil de ler — usa-se uma das duas formas abaixo.</p>
+
+<h3>2. Lista inline</h3>
+<pre><code>WHEN CONTAINS ("oi", "ola", "boa tarde", "boa noite", "bom dia") {
+REPLY "Ola! Como posso ajudar?"
+}</code></pre>
+<p align="justify">Basta uma das palavras da lista aparecer na mensagem para a condição ser verdadeira. Boa para listas de tamanho médio (5-20 palavras) que fazem sentido ficar visíveis dentro do próprio <code>.sql</code>.</p>
+
+<h3>3. Lista a partir de um ficheiro .txt</h3>
+<pre><code>WHEN CONTAINS KEYWORDS(saudacoes.txt) {
+REPLY "Ola! Como posso ajudar?"
+}</code></pre>
+<p align="justify">Para listas grandes (100+ palavras) que poluiriam o <code>.sql</code>. O nome do ficheiro <b>não leva aspas</b> — é um nome de ficheiro, não uma string de busca.</p>
+<p align="justify">O ficheiro é lido uma vez (e mantido em cache) na primeira mensagem que avalia essa condição, não a cada mensagem recebida.</p>
+<p align="justify"><b>Formato do .txt:</b> uma palavra ou frase por linha, sem aspas, sem vírgulas, sem comentários, sem qualquer outra sintaxe misturada.</p>
+<pre><code>oi
+ola
+boa tarde
+boa noite
+bom dia</code></pre>
+</section>
+
+<section id="reply-ficheiro" data-titulo="reply ficheiro indexado numerado bloco chaves n valor">
+<h2>REPLY a partir de um ficheiro indexado</h2>
+<p align="justify">Além de <code>REPLY "texto direto"</code>, o <code>REPLY</code> também lê uma entrada numerada de um ficheiro externo:</p>
+<pre><code>REPLY (respostas.txt, 1)</code></pre>
+<p align="justify">O ficheiro de entradas numeradas aceita <b>duas formas</b>, nunca misturadas dentro da mesma entrada — a forma escolhida para a entrada N é reconhecida automaticamente pelo que vem logo a seguir ao <code>N-</code>.</p>
+
+<h3>Forma 1 — uma linha só (N- valor)</h3>
+<pre><code>1- Ola! Como posso ajudar?
+2- Desculpe, nao percebi. Escreve "ajuda".</code></pre>
+<p align="justify"><code>REPLY (respostas.txt, 1)</code> procura a linha que começa por <code>1-</code> e usa o texto a seguir ao traço, até ao fim da linha, como resposta.</p>
+
+<h3>Forma 2 — bloco entre chaves (N-{ ... })</h3>
+<p align="justify">Para respostas que precisam de mais de uma linha — texto com opções em lista, um bloco de HTML, um trecho de Markdown:</p>
+<pre><code>3-{
+Qual serviço você quer?
+- Suporte técnico
+- Vendas
+- Cancelar
+}</code></pre>
+<p align="justify">Tudo entre a <code>{</code> que abre e a <code>}</code> que fecha pertence à entrada — incluindo quebras de linha. A leitura é <b>rigorosa quanto ao aninhamento</b>: se o conteúdo lá dentro também tiver chaves, essas contam para o aninhamento e não fecham a entrada antes da hora:</p>
+<pre><code>4-{
+&lt;div style="{color:red}"&gt;
+&lt;p&gt;Formulário de contacto&lt;/p&gt;
+&lt;/div&gt;
+}</code></pre>
+<p align="justify">Uma <code>{</code> sem a <code>}</code> correspondente antes do fim do ficheiro é erro — nunca é ignorado silenciosamente.</p>
+<p align="justify">Este é o mesmo formato de ficheiro usado por <code>IMPORT {ficheiro.txt, N}</code> e pelo ficheiro usado em <code>WAITING(...)</code>.</p>
+</section>
+
+<section id="import" data-titulo="import ficheiro sql env alias importar codigo valor">
+<h2>IMPORT: as duas formas</h2>
+
+<h3>1. Importar outro ficheiro .sql</h3>
+<pre><code>IMPORT {respostas.sql}
+IMPORT {sinais.sql}
+
+CREATE BOT "MeuBot"
+PLATFORM WHATSAPP
+
+RUN BOT</code></pre>
+<p align="justify">Tal como o <code>SOURCE</code> do cliente MySQL ou o <code>\i</code> do <code>psql</code>, isto é o <b>interpretador do BotQL</b> que resolve: ao encontrar <code>IMPORT {ficheiro.sql}</code>, lê o ficheiro indicado e junta o conteúdo antes de processar o resto.</p>
+<ul>
+<li><code>IMPORT</code> é sempre resolvido antes de qualquer outro comando, independente de onde aparece no ficheiro.</li>
+<li>Um ficheiro importado pode conter blocos <code>ON</code> prontos a usar.</li>
+</ul>
+
+<h3>2. Importar uma entrada de um ficheiro de valores</h3>
+<pre><code>IMPORT {env.txt, 1}</code></pre>
+<p align="justify">Com um segundo argumento (o índice), o <code>IMPORT</code> <b>não</b> trata o ficheiro como código — lê só a entrada N (mesmo formato N-/N-{} do REPLY indexado).</p>
+<p align="justify">Sem <code>AS</code>, o valor fica na variável genérica <code>env</code>. Com mais de um segredo, cada <code>IMPORT</code> deve ter o seu próprio alias:</p>
+<pre><code>IMPORT {env.txt, 1} AS K
+IMPORT {env.txt, 2} AS TOKEN_WHATSAPP</code></pre>
+<p align="justify">Com <code>AS</code>, o valor fica acessível diretamente pelo nome do alias em qualquer expressão — sem <code>AS</code>, só é acessível como <code>env.NOME_FICHEIRO</code>.</p>
+</section>
+
+<section id="connect-response" data-titulo="connect response ia response alias fallback inteligente">
+<h2>CONNECT RESPONSE e Response(): ligar a uma IA</h2>
+<ul>
+<li><b>CONNECT RESPONSE &lt;alias&gt;</b> — liga o bot a uma IA usando um valor já importado. Só estabelece a ligação, não dispara nada sozinho. O alias tem de corresponder a um <code>IMPORT {..., N} AS &lt;alias&gt;</code> já feito antes.</li>
+<li><b>Response()</b> — dispara o ciclo de vida: pega na mensagem atual do cliente, envia para a IA ligada, espera a resposta, e devolve esse texto onde for chamado.</li>
+</ul>
+<pre><code>IMPORT {env.txt, 1} AS K
+CONNECT RESPONSE K              -- só liga, não faz nada sozinho
+
+CREATE TABLE Context() PREVENT DEFAULT
+
+ON MESSAGE {
+INSERT INTO Context()
+
+WHEN CONTAINS "preço" {
+REPLY "Confira o nosso catálogo: link.com"
+}
+
+OTHERWISE {
+REPLY Response()         -- aqui é que dispara: envia, espera, responde
+}
+}
+
+RUN BOT</code></pre>
+<p align="justify">Padrão de uso mais comum: <code>OTHERWISE { REPLY Response() }</code> — quando nenhuma regra WHEN cobre a mensagem, a IA entra como fallback inteligente.</p>
+<p align="justify">Com mais que uma IA ligada, cada uma com o seu alias:</p>
+<pre><code>IMPORT {env.txt, 1} AS A
+IMPORT {env.txt, 2} AS B
+
+CONNECT RESPONSE A
+CONNECT RESPONSE B</code></pre>
+<p align="justify"><code>Response()</code> sozinho só faz sentido com <b>uma</b> IA ligada — com mais que uma é ambíguo (o bot recusa com erro listando os aliases). Com várias, <code>Response(&lt;alias&gt;)</code> diz qual usar:</p>
+<pre><code>ON MESSAGE {
+WHEN CONTAINS "vendas" {
+REPLY Response(A)
+}
+
+WHEN CONTAINS "suporte" {
+REPLY Response(B)
+}
+
+OTHERWISE {
+REPLY Response(A)
+}
+}</code></pre>
+<p align="justify">O alias passado a <code>Response(...)</code> tem de corresponder a um <code>CONNECT RESPONSE &lt;alias&gt;</code> já feito antes — senão é erro.</p>
+</section>
+
+<section id="think" data-titulo="think retrieval local conhecimento waiting animacao pensando confianca bm25 relevancia">
+<h2>THINK: retrieval local sobre um ficheiro de conhecimento</h2>
+<p align="justify">Diferente de <code>REPLY (ficheiro, N)</code> e de <code>Response()</code>, <code>THINK</code> procura, <b>dentro do próprio dispositivo</b>, o conteúdo mais relevante para a mensagem recebida, num ficheiro de conhecimento em texto livre. Não usa IA, não sai para a rede, não precisa de <code>CONNECT</code> nenhum.</p>
+<pre><code>WHEN CONTAINS KEYWORDS(perguntas.txt)
+THINK(conhecimento.txt) OR
+REPLY (fallback.txt, 1)</code></pre>
+<p align="justify">Formato do ficheiro de conhecimento: blocos de texto livre, cada um separado por uma linha em branco:</p>
+<pre><code>Entregamos em toda Luanda, com prazo de 2 a 3 dias uteis apos confirmacao
+do pagamento.
+
+Aceitamos pagamento via transferencia bancaria, multicaixa express ou
+dinheiro na entrega.
+
+O horario de atendimento e de segunda a sexta, das 8h as 18h.</code></pre>
+
+<h3>Comportamento</h3>
+<p align="justify"><code>THINK(ficheiro.txt)</code> sozinho já <b>é</b> a resposta quando encontra algo com confiança suficiente — não precisa de <code>REPLY THINK(...)</code> antes. Só o fallback (opcional, depois do <code>OR</code>) precisa da palavra <code>REPLY</code> de facto.</p>
+<p align="justify">Quando mais de uma parte do ficheiro parece relevante, <code>THINK</code> tenta perceber o motivo antes de decidir:</p>
+<ul>
+<li><b>Informação repetida.</b> Se os candidatos dizem basicamente a mesma coisa, responde com um deles, sem repetir.</li>
+<li><b>Informação complementar.</b> Se cobrem casos diferentes do mesmo assunto, tenta juntar numa única resposta.</li>
+<li><b>Pergunta pouco clara.</b> Tenta entender de novo, focando no que é mais decisivo, antes de desistir.</li>
+</ul>
+<p align="justify">Só depois de esgotar essas tentativas: se nada bater com confiança suficiente, corre o <code>REPLY (...)</code> a seguir ao <code>OR</code>. Sem fallback e sem confiança, <code>THINK</code> não responde nada.</p>
+
+<h3>WAITING: texto e animação enquanto algo demora</h3>
+<p align="justify">Por omissão, sem nada extra no <code>.sql</code>, mostra um texto genérico tipo "Pensando..." e um tempo mínimo de 3 segundos, mesmo que a busca seja mais rápida — sem esse mínimo, a mensagem apareceria e desapareceria rápido demais.</p>
+<p align="justify"><b>1. Acoplado a um THINK</b>, logo a seguir a ele, antes do <code>OR</code>:</p>
+<pre><code>THINK(conhecimento.txt) WAITING(loading.txt, 2) OR
+REPLY (fallback.txt, 1)</code></pre>
+<p align="justify"><b>2. Sozinho, como ação independente</b> — útil antes de qualquer outra coisa lenta sem aviso próprio, como <code>Response()</code>:</p>
+<pre><code>WHEN CONTAINS "vendas" {
+WAITING("Um momento...")
+REPLY Response(A)
+}</code></pre>
+<p align="justify">Nos dois casos: <b>primeiro argumento</b> (opcional) — texto direto entre aspas, ou nome de ficheiro .txt (sem aspas). Sem argumento, usa o texto padrão. <b>Segundo argumento</b> (opcional) — segundos mínimos de espera. Sem argumento, usa 3 segundos.</p>
+<p align="justify">Um ficheiro de WAITING pode conter HTML/CSS (plataformas de texto simples como o WhatsApp ignoram a marcação e usam só o texto):</p>
+<pre><code>&lt;div class="pensando"&gt;
+&lt;span&gt;A verificar a melhor resposta...&lt;/span&gt;
+&lt;/div&gt;</code></pre>
+
+<h3>Como a relevância é calculada</h3>
+<ul>
+<li><b>Frequência ponderada</b> — palavra rara pesa mais que uma comum; repetições contam cada vez menos.</li>
+<li><b>Correspondência de frase</b> — um trecho de 2+ palavras igual conta mais que palavras espalhadas.</li>
+<li><b>Tolerância a erros de escrita</b> — 1-2 letras trocadas ainda pode bater, com peso reduzido.</li>
+<li><b>Variações de plural/sufixo</b> — "produtos" e "produto" contam como a mesma palavra.</li>
+</ul>
+<p align="justify">O <code>THINK</code> <b>não</b> entende sinónimos sem raiz/letras parecidas — "horas" e "horário" continuam palavras diferentes. Para esses casos, é possível ligar manualmente um termo a outro nas opções do interpretador.</p>
+<p align="justify">O ficheiro de conhecimento é lido e processado uma vez (cache), não a cada mensagem.</p>
+</section>
+
+<section id="catalogo" data-titulo="show catalog category catalogo produtos loja ecommerce item price color image cards html data-botql-produto data-botql-categoria">
+<h2>SHOW CATALOG / SHOW CATEGORY: catálogo de produtos a partir de um ficheiro</h2>
+<p align="justify">Mostra os itens (ou as categorias) de um ficheiro de catálogo — útil para lojas, menus, listas de serviços. Duas formas:</p>
+<p align="justify"><b>1. SHOW CATEGORY(ficheiro.txt)</b> — sozinho, sem estar preso a um CATALOG. Mostra só os <b>nomes</b> das categorias do ficheiro:</p>
+<pre><code>WHEN CONTAINS "categorias"{
+SHOW CATEGORY(catalogo.txt)
+}</code></pre>
+<p align="justify"><b>2. SHOW CATALOG(ficheiro.txt)</b> — mostra os itens (nome, preço, cor, imagem). Sem <code>CATEGORY</code>, mostra os itens de todas as categorias juntas; com <code>CATEGORY("...")</code>, só os dessa categoria:</p>
+<pre><code>WHEN CONTAINS "tudo"{
+SHOW CATALOG(catalogo.txt)
+}
+
+WHEN CONTAINS "bebidas"{
+SHOW CATALOG(catalogo.txt) CATEGORY("Bebidas")
+}</code></pre>
+<p align="justify">Formato do ficheiro de catálogo: um bloco por categoria, cada <code>ITEM</code> com nome entre aspas e modificadores opcionais <code>PRICE</code>, <code>COLOR</code> e <code>IMAGE</code>:</p>
+<pre><code>Bebidas {
+ITEM "Coca-Cola 350ml" PRICE "500 Kz"
+ITEM "Sumo de manga" PRICE "450 Kz" COLOR "#F5A623"
+}
+
+Snacks {
+ITEM "Batata frita" PRICE "700 Kz" COLOR "#F5D76E" IMAGE "batata.png"
+}</code></pre>
+
+<h3>Comportamento</h3>
+<p align="justify">Tal como o resto do BotQL, a resposta chega sempre em duas formas ao mesmo tempo, no mesmo evento — quem recebe é que escolhe qual usar:</p>
+<ul>
+<li><b>Texto limpo</b>, sem marcação nenhuma — usado por plataformas de texto simples (WhatsApp, terminal).</li>
+<li><b>HTML autossuficiente</b>, com o próprio <code>&lt;style&gt;</code> embutido — usado pelo preview do editor e pelo chat de um Servidor BotQL.</li>
+</ul>
+<p align="justify">Os cards de item vêm marcados com <code>data-botql-produto="Nome do item"</code>, e cada categoria (no SHOW CATEGORY) com <code>data-botql-categoria="Nome"</code>. O bot nunca executa nada sozinho a partir de um clique — só recebe, depois, a mensagem de texto normal que o próprio cliente enviar (é o host — o chat.html ou o preview — que decide o que escrever no campo de mensagem quando alguém toca num card).</p>
+</section>
+
+<section id="default-message" data-titulo="default message saudacao automatica primeiro contacto client">
+<h2>DEFAULT MESSAGE: saudação automática ao primeiro contacto</h2>
+<p align="justify">Sem integração de plataforma, o BotQL não tem como "falar primeiro" sozinho. <code>DEFAULT MESSAGE</code> resolve isto usando o próprio banco de dados do bot para detetar se é a primeira vez que um <code>client</code> aparece.</p>
+<p align="justify">É um modificador do <code>CREATE TABLE</code>, ao lado de <code>PREVENT DEFAULT</code>:</p>
+<pre><code>CREATE TABLE Context() PREVENT DEFAULT
+DEFAULT MESSAGE "Ola! Bem-vindo."</code></pre>
+<p align="justify">Funciona com tabela manual também, desde que tenha coluna para o remetente (<code>client</code> ou <code>sender</code>):</p>
+<pre><code>CREATE TABLE messages (
+id INT PRIMARY KEY AUTO_INCREMENT,
+sender TEXT,
+content TEXT,
+reply TEXT,
+created_at DATETIME
+) PREVENT DEFAULT
+DEFAULT MESSAGE "Ola! Bem-vindo."</code></pre>
+<p align="justify">Também aceita ficheiro indexado:</p>
+<pre><code>DEFAULT MESSAGE (greets.txt, 1)</code></pre>
+
+<h3>Comportamento</h3>
+<p align="justify">Antes de correr o resto do <code>ON MESSAGE</code>, verifica se já existe linha na tabela para o <code>client</code> da mensagem:</p>
+<ul>
+<li>Se <b>não existir</b> — primeira mensagem. Responde com a DEFAULT MESSAGE e não corre o resto do bloco dessa vez.</li>
+<li>Se <b>já existir</b> — o ON MESSAGE corre normalmente, sem repetir a saudação.</li>
+</ul>
+</section>
+
+<section id="env" data-titulo="env.txt convencao chaves api tokens segredos">
+<h2>A convenção env.txt</h2>
+<p align="justify">Para chaves de API, tokens e outros dados sensíveis, a convenção é concentrar tudo num único ficheiro <code>env.txt</code>, com uma entrada numerada por serviço:</p>
+<pre><code>1- sk-abc123suachaveaqui
+2- outrachavesecreta</code></pre>
+<p align="justify">Cada <code>IMPORT {env.txt, N}</code> lê uma linha específica. Isto mantém segredos fora do <code>.sql</code> principal e fora de qualquer ficheiro partilhado ou publicado.</p>
+</section>
+
+<section id="seguranca" data-titulo="seguranca gitignore repositorio publico github">
+<h2>Segurança: env.txt nunca vai para o repositório</h2>
+<p align="justify">Um projeto BotQL pode ser público no GitHub sem nunca expor chaves de API — desde que <code>env.txt</code> fique de fora do repositório.</p>
+<p align="justify">O projeto deve ter um <code>.gitignore</code> na raiz com a linha:</p>
+<pre><code>env.txt</code></pre>
+<p align="justify">Cada pessoa que usa o projeto cria o <b>próprio</b> <code>env.txt</code> localmente — o ficheiro nunca é partilhado nem fica público.</p>
+</section>
+
+<section id="eventos" data-titulo="eventos on start message signal">
+<h2>Eventos disponíveis</h2>
+<ul>
+<li><code>ON START</code> — corre uma vez, quando o bot liga.</li>
+<li><code>ON MESSAGE</code> — corre sempre que chega uma mensagem.</li>
+<li><code>ON SIGNAL FROM "&lt;origem&gt;"</code> — corre quando chega um sinal de um canal específico.</li>
+</ul>
+</section>
+
+<section id="variaveis" data-titulo="variaveis implicitas client message lastmsg">
+<h2>Variáveis implícitas</h2>
+<p align="justify">BotQL não usa notação de ponto (<code>MESSAGE.TEXT</code> não existe). Em vez disso:</p>
+<table>
+<tr><th>Variável</th><th>Descrição</th></tr>
+<tr><td><code>client</code></td><td>Remetente da mensagem recebida</td></tr>
+<tr><td><code>message</code></td><td>Texto da mensagem recebida</td></tr>
+<tr><td><code>lastMsg</code></td><td>Texto da última resposta enviada pelo bot</td></tr>
+</table>
+</section>
+
+<section id="banco" data-titulo="banco de dados insert update where context ordem last_insert_id">
+<h2>Integração com Banco de Dados</h2>
+<p align="justify"><b>1. Manual, com colunas explícitas:</b></p>
+<pre><code>CREATE TABLE messages (
+id INT PRIMARY KEY AUTO_INCREMENT,
+sender TEXT,
+content TEXT,
+reply TEXT,
+created_at DATETIME
+) PREVENT DEFAULT</code></pre>
+<p align="justify"><b>2. Automática, via Context():</b></p>
+<pre><code>CREATE TABLE Context() PREVENT DEFAULT</code></pre>
+<p align="justify">O <code>INSERT</code> também é automático:</p>
+<pre><code>INSERT INTO Context()</code></pre>
+
+<h3>Regra fixa de ordem — INSERT sempre primeiro, UPDATE sempre no fim</h3>
+<ol>
+<li><code>INSERT</code> logo no início, antes de qualquer <code>WHEN</code>.</li>
+<li>Os blocos <code>WHEN</code>/<code>OTHERWISE</code> decidem a resposta.</li>
+<li><code>UPDATE</code> sempre no fim, com <code>LAST_INSERT_ID()</code>.</li>
+</ol>
+<pre><code>ON MESSAGE {
+-- 1. INSERT primeiro
+INSERT INTO messages (sender, content, created_at)
+VALUES (client, message, NOW())
+
+-- 2. WHEN decide a resposta
+WHEN CONTAINS "preço" {
+REPLY "Confira o nosso catálogo: link.com"
+}
+OTHERWISE {
+REPLY "Desculpe, não entendi."
+}
+
+-- 3. UPDATE por último
+UPDATE messages
+SET reply = lastMsg
+WHERE id = LAST_INSERT_ID()
+}</code></pre>
+</section>
+
+<section id="exemplos" data-titulo="exemplos bot loja atendimento sinais trading ia">
+
+<h2>Exemplos</h2>
+
+<h3>Exemplo 1 — Bot de Atendimento com Context()</h3>
+<pre><code>CREATE BOT "LojaBot"
+PLATFORM WHATSAPP
+
+CREATE TABLE Context() PREVENT DEFAULT
+
+ON MESSAGE {
+INSERT INTO Context()
+
+WHEN CONTAINS "preço" {
+REPLY "Confira o nosso catálogo: link.com"
+}
+WHEN CONTAINS "comprar" {
+REPLY "Pedido registrado!"
+}
+OTHERWISE {
+REPLY "Desculpe, não entendi."
+}
+}
+
+RUN BOT</code></pre>
+
+<h3>Exemplo 2 — Bot com tabela manual</h3>
+<pre><code>CREATE BOT "SupportBot"
+PLATFORM WHATSAPP
+
+CREATE TABLE messages (
+id INT PRIMARY KEY AUTO_INCREMENT,
+sender TEXT,
+content TEXT,
+reply TEXT,
+created_at DATETIME
+) PREVENT DEFAULT
+
+ON START {
+REPLY "Olá! Estou online."
+}
+
+ON MESSAGE {
+INSERT INTO messages (sender, content, created_at)
+VALUES (client, message, NOW())
+
+WHEN CONTAINS "preço" REPLY "Confira o nosso catálogo: link.com"
+WHEN CONTAINS "horário" REPLY "Estamos abertos das 9h às 18h"
+WHEN CONTAINS "humano" {
+FORWARD TO "+244900000000"
+REPLY "A encaminhar para um atendente humano..."
+}
+OTHERWISE REPLY "Desculpe, não entendi."
+
+UPDATE messages
+SET reply = lastMsg
+WHERE id = LAST_INSERT_ID()
+}
+
+RUN BOT</code></pre>
+
+<h3>Exemplo 3 — Lista grande de saudações e respostas por ficheiro</h3>
+<pre><code>CREATE BOT "AtendimentoBot"
+PLATFORM WHATSAPP
+
+CREATE TABLE Context() PREVENT DEFAULT
+
+ON MESSAGE {
+INSERT INTO Context()
+
+WHEN CONTAINS KEYWORDS(saudacoes.txt) {
+REPLY (respostas.txt, 1)
+}
+WHEN CONTAINS ("preço", "quanto custa", "valor") {
+REPLY "Confira o nosso catálogo: link.com"
+}
+OTHERWISE {
+REPLY (respostas.txt, 2)
+}
+}
+
+RUN BOT</code></pre>
+<p align="justify"><code>saudacoes.txt</code>:</p>
+<pre><code>oi
+ola
+boa tarde
+boa noite
+bom dia</code></pre>
+<p align="justify"><code>respostas.txt</code>:</p>
+<pre><code>1- Ola! Como posso ajudar?
+2- Desculpe, nao percebi. Escreve "ajuda".</code></pre>
+
+<h3>Exemplo 4 — Bot de Sinais (Trading)</h3>
+<pre><code>CREATE BOT "SignalForwarder"
+
+CONNECT TELEGRAM CHANNEL "@sinais_ouro"
+CONNECT QUOTEX ACCOUNT "meu_token_aqui"
+
+ON SIGNAL FROM "@sinais_ouro" {
+PARSE SIGNAL
+SEND TO QUOTEX
+REPLY TO ADMIN "Sinal enviado: " + SIGNAL.PAIR
+}
+
+ON MESSAGE {
+WHEN CONTAINS "status" REPLY "Bot ativo. A processar sinais em tempo real."
+}
+
+RUN BOT</code></pre>
+
+<h3>Exemplo 5 — Bot com fallback para IA</h3>
+<pre><code>IMPORT {env.txt, 1} AS K
+CONNECT RESPONSE K
+
+CREATE BOT "AtendimentoInteligente"
+PLATFORM WHATSAPP
+
+CREATE TABLE Context() PREVENT DEFAULT
+
+ON MESSAGE {
+INSERT INTO Context()
+
+WHEN CONTAINS "preço" {
+REPLY "Confira o nosso catálogo: link.com"
+}
+WHEN CONTAINS "horário" {
+REPLY "Estamos abertos das 9h às 18h"
+}
+OTHERWISE {
+WAITING("Um momento...")
+REPLY Response(K)
+}
+}
+
+RUN BOT</code></pre>
+<p align="justify"><code>env.txt</code> (fora do repositório):</p>
+<pre><code>1- sk-abc123suachaveaqui</code></pre>
+
+<h3>Exemplo 6 — Resposta com opções e bloco de HTML</h3>
+<pre><code>CREATE BOT "AtendimentoBot"
+PLATFORM WHATSAPP
+
+ON MESSAGE {
+WHEN CONTAINS ("oi", "ola") {
+REPLY (respostas.txt, 1)
+}
+WHEN CONTAINS "servico" {
+REPLY (respostas.txt, 2)
+}
+WHEN CONTAINS "formulario" {
+REPLY (respostas.txt, 3)
+}
+OTHERWISE {
+REPLY (respostas.txt, 4)
+}
+}
+
+RUN BOT</code></pre>
+<p align="justify"><code>respostas.txt</code>:</p>
+<pre><code>1- Ola! Como posso ajudar?
+2-{
+Qual serviço você quer?
+- Suporte técnico
+- Vendas
+- Cancelar
+}
+3-{
+&lt;div style="{color:red}"&gt;
+&lt;p&gt;Formulário de contacto&lt;/p&gt;
+&lt;/div&gt;
+}
+4- Desculpe, nao percebi.</code></pre>
+
+<h3>Exemplo 7 — Conhecimento local (THINK e WAITING)</h3>
+<pre><code>CREATE BOT "LojaBot"
+PLATFORM WHATSAPP
+
+CREATE TABLE Context() PREVENT DEFAULT
+DEFAULT MESSAGE "Ola! Bem-vindo. Pergunte-me sobre entregas, pagamento ou horario."
+
+ON MESSAGE {
+INSERT INTO Context()
+
+WHEN CONTAINS ("oi", "ola") {
+REPLY "Em que mais posso ajudar?"
+}
+
+OTHERWISE
+THINK(conhecimento.txt) WAITING(loading.txt, 2) OR
+REPLY (fallback.txt, 1)
+}
+
+RUN BOT</code></pre>
+<p align="justify">Neste exemplo, a <code>DEFAULT MESSAGE</code> só é enviada na primeira mensagem de cada <code>client</code> novo; a partir da segunda mensagem, o fluxo normal já corre sempre.</p>
+</section>
+
+<section id="regras" data-titulo="regras de sintaxe lista 21">
+<h2>Regras de sintaxe</h2>
+<ol>
+<li>Todo comando é escrito em <b>MAIÚSCULAS</b>.</li>
+<li>Texto literal vai sempre entre aspas <code>" "</code>.</li>
+<li>Blocos com mais de uma ação usam chaves <code>{ }</code>, sempre a seguir a <code>ON</code> ou <code>WHEN</code>.</li>
+<li>Uma única ação não precisa de chaves.</li>
+<li><code>WHEN</code> só pode ser usado dentro de um bloco <code>ON MESSAGE { }</code>.</li>
+<li><code>OTHERWISE</code> é opcional, mas recomendado.</li>
+<li>Não existe notação de ponto — usa-se <code>client</code>, <code>message</code>, <code>lastMsg</code>.</li>
+<li><code>PREVENT DEFAULT</code> no <code>CREATE TABLE</code> evita erro se a tabela já existir.</li>
+<li><code>Context()</code> é o único nome de tabela reservado — schema automático, <code>INSERT INTO Context()</code> também automático.</li>
+<li>Ordem fixa quando há BD: <code>INSERT</code> no início → <code>WHEN</code>/<code>OTHERWISE</code> no meio → <code>UPDATE</code> no fim, com <code>LAST_INSERT_ID()</code>.</li>
+<li><code>{ }</code> a seguir a <code>IMPORT</code> é referência a ficheiro, não bloco de ações.</li>
+<li><code>CONTAINS (...)</code> aceita lista de strings entre parênteses.</li>
+<li><code>CONTAINS KEYWORDS(ficheiro.txt)</code> — nome do ficheiro sem aspas, só palavras-chave uma por linha.</li>
+<li><code>REPLY (ficheiro.txt, N)</code> — formas <code>N- valor</code> ou <code>N-{ ... }</code>, nunca misturadas; chave por fechar é erro.</li>
+<li>Segredos vivem em <code>env.txt</code>, nunca no repositório (<code>.gitignore</code>).</li>
+<li><code>IMPORT {..., N} AS &lt;alias&gt;</code> dá nome ao valor; sem <code>AS</code> cai em <code>env.NOME_FICHEIRO</code>.</li>
+<li><code>CONNECT RESPONSE &lt;alias&gt;</code> só liga; <code>Response()</code>/<code>Response(&lt;alias&gt;)</code> é que dispara.</li>
+<li>Nomes de ficheiro só reconhecem letras, números e underscore — hífen não funciona.</li>
+<li><code>THINK(ficheiro.txt)</code> sozinho já é a resposta quando tem confiança suficiente.</li>
+<li><code>WAITING(...)</code> acoplado a THINK ou sozinho; argumentos opcionais e independentes.</li>
+<li><code>DEFAULT MESSAGE</code> vai sempre dentro do <code>CREATE TABLE</code>, ao lado de <code>PREVENT DEFAULT</code>.</li>
+<li><code>SHOW CATEGORY(ficheiro.txt)</code> sozinho mostra só nomes; <code>SHOW CATALOG(ficheiro.txt)</code> mostra itens, com <code>CATEGORY("...")</code> opcional para filtrar uma só.</li>
+</ol>
+</section>
+
+<section id="filosofia" data-titulo="filosofia linguagem de regras">
+<h2>Filosofia</h2>
+<p align="justify">BotQL não é uma linguagem de programação — é uma <b>linguagem de regras</b> para criar bots, tal como uma consulta SQL descreve o que queres buscar numa base de dados. Não precisas de saber programar para escrever BotQL; precisas apenas de saber o que queres que o teu bot faça.</p>
+</section>
+
+<section id="onde-corre" data-titulo="onde o bot corre interpretador local servidor github pm2">
+<h2>Onde o bot corre</h2>
+<p align="justify">O <b>interpretador</b> vive num sítio fixo (GitHub), e cada utilizador só precisa do seu próprio ficheiro <code>.sql</code> com as regras do bot.</p>
+<p align="justify">O bot corre <b>localmente</b>, no computador ou servidor do próprio utilizador — não em servidores geridos por terceiros. Fica online enquanto esse processo estiver a correr; manter o bot sempre online (PM2, <code>screen</code>, servidor próprio) é responsabilidade de quem o cria.</p>
+</section>
+
+<div id="sem-resultados">Nenhum resultado para essa pesquisa.</div>
+
+</div>
+
+<script src="highlight.js"></script>
+<script>
+// Highlight.js aplicado a cada bloco <pre><code> ja existente na pagina
+// (o Doc.html e' HTML estatico, nao Markdown a converter — por isso nao
+// precisa do marked.js, so do highlight.js). Auto-deteta a linguagem de
+// cada bloco (sql, html, etc.), tal como no Preview do index.html.
+// Sem-op silencioso se highlight.js nao tiver carregado (asset em
+// falta) — a doc continua legivel, so sem cor.
+if (typeof hljs !== 'undefined') {
+document.querySelectorAll('pre code').forEach((bloco) => {
+// highlightElement nao aceita linguagem por parametro — a API real e'
+// via classe no proprio elemento. Forcamos "sql" porque todo o
+// conteudo da doc e' BotQL (sintaxe parecida: MAIUSCULAS, aspas,
+// parenteses), e o highlight.js nao conhece BotQL nativamente —
+// deixar em auto-deteccao erra a linguagem com frequencia.
+bloco.classList.add('language-sql');
+hljs.highlightElement(bloco);
+});
+}
+
+function voltar() {
+if (window.history.length > 1) {
+window.history.back();
+} else {
+location.href = 'Index.html';
+}
+}
+
+// Contrato usado pelo MainActivity.kt (ver onBackPressed): devolve false
+// quando o botão físico "Voltar" já foi tratado aqui (navegação dentro do
+// próprio WebView), para o Android não fechar a app.
+function botqlAoBackPressed() {
+if (window.history.length > 1) {
+window.history.back();
+return false;
+}
+return true;
+}
+
+// Pesquisa simples: filtra cada <section> pelo texto visível + pelo
+// atributo data-titulo (palavras-chave extra, para acertar em nomes de
+// comandos que não aparecem literalmente no texto corrido).
+function filtrar() {
+const termo = document.getElementById('busca-input').value.trim().toLowerCase();
+const secoes = document.querySelectorAll('#conteudo > section');
+const toc = document.getElementById('toc');
+const semResultados = document.getElementById('sem-resultados');
+let algumaVisivel = false;
+
+if (!termo) {
+secoes.forEach((s) => s.classList.remove('escondida'));
+toc.classList.remove('escondida');
+semResultados.style.display = 'none';
+document.getElementById('busca-info').style.display = 'none';
+return;
+}
+
+toc.classList.add('escondida');
+
+secoes.forEach((s) => {
+const titulo = (s.dataset.titulo || '').toLowerCase();
+const texto = s.innerText.toLowerCase();
+const bate = titulo.includes(termo) || texto.includes(termo);
+s.classList.toggle('escondida', !bate);
+if (bate) algumaVisivel = true;
+});
+
+semResultados.style.display = algumaVisivel ? 'none' : 'block';
+const info = document.getElementById('busca-info');
+info.style.display = 'block';
+info.textContent = algumaVisivel ? '' : 'Tenta outro termo (ex: THINK, WAITING, CONTAINS, IMPORT).';
+}
+</script>
+
+</body>
+</html>
