@@ -29,6 +29,7 @@ font-family:'Times New Roman',Times,serif;
 font-size:15px;
 height:100vh;
 height:100dvh;
+height:calc(var(--vh, 1vh) * 100);
 display:flex;
 flex-direction:column;
 overflow:hidden;
