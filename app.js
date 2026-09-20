@@ -995,6 +995,16 @@ const MODELOS_CACHE_KEY = 'botql_editor_online_modelos_cache';
         if (d) d.remove();
     }
 
+    // Mostra/esconde a linha de erro do ecrã Premium (#premium-estado,
+    // já presente no template). Texto vazio esconde.
+    function mostrarErroPremium(texto) {
+        const el = document.getElementById('premium-estado');
+        if (!el) return;
+        if (!texto) { el.style.display = 'none'; el.textContent = ''; return; }
+        el.textContent = texto;
+        el.style.display = 'block';
+    }
+
     function escolherComprovativo(input) {
         const f = input.files && input.files[0];
         fotoComprovativo = null;
