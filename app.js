@@ -222,13 +222,61 @@ const MODELOS_CACHE_KEY = 'botql_editor_online_modelos_cache';
     // estiver inacessível, o editor abre em modo local (sem limites
     // aplicados até haver ligação).
     // O navegador não guarda quais bots já foram publicados (fica no
-    // servidor). Ao arrancar, pede-os de volta para o botão "Ver
-    // atividade" e o "Atualizar bot" funcionarem depois de recarregar.
-    async function carregarPublicados() {
-        try {
-            const r = await chamarConta('/api/botql/conta/recuperar', { codigo: obterCodigo() });
-            if (r.ok && r.dados.publicados) Object.assign(idsPublicadosMem, r.dados.publicados);
-        } catch (e) {}
+    // servidor). Ao arrancar, pede-os de volta. É assíncrono (rede), por
+    // isso há um estado que os ecrãs usam para mostrar "a verificar"
+    // até a resposta chegar, em vez de fingir que o bot não está publicado.
+    //   'a-carregar' -> à espera da resposta   'pronto' -> já se sabe
+    //   'falhou'     -> erro ou tempo esgotado (8 s)
+    let publicadosEstado = 'a-carregar';
+    let publicadosPromessa = null;
+
+    function carregarPublicados() {
+        if (publicadosPromessa) return publicadosPromessa;
+        publicadosEstado = 'a-carregar';
+        atualizarTelasPublicados();
+        publicadosPromessa = (async () => {
+            try {
+                const limite = new Promise((_, rejeitar) => setTimeout(() => rejeitar(new Error('tempo esgotado')), 8000));
+                const r = await Promise.race([chamarConta('/api/botql/conta/recuperar', { codigo: obterCodigo() }), limite]);
+                if (!r.ok) throw new Error('falha');
+                if (r.dados.publicados) Object.assign(idsPublicadosMem, r.dados.publicados);
+                publicadosEstado = 'pronto';
+            } catch (e) {
+                publicadosEstado = 'falhou';
+            } finally {
+                publicadosPromessa = null;
+                atualizarTelasPublicados();
+            }
+        })();
+        return publicadosPromessa;
+    }
+
+    // Garante que se sabe quais bots estão publicados ANTES de publicar
+    // ou atualizar (senão criava-se um link novo em vez de atualizar).
+    async function garantirPublicados() {
+        if (publicadosEstado !== 'pronto') await carregarPublicados();
+        return publicadosEstado === 'pronto';
+    }
+
+    async function tentarPublicadosDeNovo() {
+        publicadosEstado = 'a-carregar';
+        atualizarTelasPublicados();
+        if (!servidorOnline) await iniciarConta();
+        else await carregarPublicados();
+    }
+
+    // Se "Meus bots" ou "Partilhar Bot" estiverem abertos, redesenha-os
+    // quando o estado muda (sem o utilizador ter de fazer nada).
+    function atualizarTelasPublicados() {
+        const overlay = document.getElementById('folha-overlay');
+        if (!overlay || !overlay.classList.contains('show')) return;
+        const titulo = document.getElementById('folha-titulo').textContent;
+        if (titulo === 'Meus bots') abrirMeusBots();
+        else if (titulo === 'Partilhar Bot') renderizarTelaPartilha();
+    }
+
+    function blocoCarregando(texto) {
+        return '<div class="carregando-bloco"><div class="spin-grande"></div><div>' + texto + '</div></div>';
     }
 
     async function iniciarConta() {
@@ -251,10 +299,14 @@ const MODELOS_CACHE_KEY = 'botql_editor_online_modelos_cache';
             aplicarEstado(dados.estado);
             servidorOnline = true;
             erroServidor = '';
-            await carregarPublicados();
+            carregarPublicados();
             return true;
         } catch (e) {
             servidorOnline = false;
+            if (publicadosEstado === 'a-carregar' && !publicadosPromessa) {
+                publicadosEstado = 'falhou';
+                atualizarTelasPublicados();
+            }
             // TypeError de fetch = nem chegou ao servidor (rede ou CORS).
             erroServidor = (e instanceof TypeError)
                 ? 'sem resposta do servidor (rede ou CORS)'
@@ -276,6 +328,7 @@ const MODELOS_CACHE_KEY = 'botql_editor_online_modelos_cache';
         conta = { deviceId: r.dados.deviceId, codigo: String(codigo).trim().toUpperCase() };
         guardarContaLocal(conta);
         idsPublicadosMem = r.dados.publicados || {};
+        publicadosEstado = 'pronto';
         const bots = r.dados.bots || {};
         const novos = {};
         Object.keys(bots).forEach((n) => { novos[n] = bots[n].sql; });
@@ -1248,6 +1301,24 @@ const MODELOS_CACHE_KEY = 'botql_editor_online_modelos_cache';
         return Number(n || 0).toLocaleString('pt-PT');
     }
 
+    // Botão "Ver atividade" de um cartão: ativo se está publicado; "a
+    // verificar..." enquanto se pergunta ao servidor; esbatido com dica
+    // se não está publicado (ou se a verificação falhou).
+    function atividadeBotaoHTML(id, nomeAttr) {
+        const estilo = 'width:100%;margin-top:14px';
+        if (id) {
+            return '<button class="part-btn destaque" style="' + estilo + '" onclick="abrirAtividadeBot(\'' + nomeAttr + '\')">Ver atividade</button>';
+        }
+        if (publicadosEstado === 'a-carregar') {
+            return '<button class="part-btn destaque a-verificar" style="' + estilo + '" disabled><span class="spin-mini"></span>A verificar...</button>';
+        }
+        const falhou = publicadosEstado === 'falhou';
+        return '<button class="part-btn destaque" style="' + estilo + '" disabled>Ver atividade</button>' +
+            '<div class="part-link" style="margin-top:10px">' +
+            (falhou ? 'Não foi possível verificar os teus bots publicados.' : 'Publica este bot para ver a atividade.') + '</div>' +
+            (falhou ? '<button class="prem-link" style="text-align:center;padding-top:6px" onclick="tentarPublicadosDeNovo()">Tentar de novo</button>' : '');
+    }
+
     function abrirMeusBots() {
         fecharMenu();
         const bots = listarNomesBots();
@@ -1266,8 +1337,7 @@ const MODELOS_CACHE_KEY = 'botql_editor_online_modelos_cache';
                 '<span class="part-icone">' + SVG_ROBO_BRANCO + '</span>' +
                 '<span class="part-nome">' + escapeHtml(base) + '</span>' +
                 '</div>' +
-                '<button class="part-btn destaque" style="width:100%;margin-top:14px"' + (id ? '' : ' disabled') + ' onclick="abrirAtividadeBot(\'' + nomeAttr + '\')">Ver atividade</button>' +
-                (id ? '' : '<div class="part-link" style="margin-top:10px">Publica este bot para ver a atividade.</div>') +
+                atividadeBotaoHTML(id, nomeAttr) +
                 '</div>';
         }).join('');
         abrirFolha('Meus bots', cartoes, '');
@@ -1377,9 +1447,18 @@ const MODELOS_CACHE_KEY = 'botql_editor_online_modelos_cache';
         // O bot aberto no editor aparece primeiro.
         bots.sort((a, b) => (a === ficheiroAtual ? -1 : 0) - (b === ficheiroAtual ? -1 : 0));
 
+        if (publicadosEstado === 'a-carregar') {
+            abrirFolha('Partilhar Bot', blocoCarregando('A verificar os teus bots publicados...'), '');
+            return;
+        }
+        const aviso = publicadosEstado === 'falhou'
+            ? '<div class="part-link" style="margin:0 0 4px">Não foi possível verificar os teus bots publicados.</div>' +
+              '<button class="prem-link" style="text-align:center;padding-top:6px;margin-bottom:10px" onclick="tentarPublicadosDeNovo()">Tentar de novo</button>'
+            : '';
+
         const publicados = lerIdsPublicados();
         abrirFolha('Partilhar Bot',
-            bots.map((nome, i) => cartaoPartilhaHTML(nome, i)).join(''), '');
+            aviso + bots.map((nome, i) => cartaoPartilhaHTML(nome, i)).join(''), '');
 
         bots.forEach((nome, i) => {
             if (publicados[nome]) atualizarBotaoPausaModal(publicados[nome], i);
@@ -1406,6 +1485,10 @@ const MODELOS_CACHE_KEY = 'botql_editor_online_modelos_cache';
     }
 
     async function publicarOuAtualizar(nomeArquivo) {
+        if (!(await garantirPublicados())) {
+            mostrarToast('Não foi possível verificar os teus bots publicados. Tenta de novo.');
+            return;
+        }
         if (!(await podePublicar(nomeArquivo))) return;
         const sql = ficheiros[nomeArquivo];
         const nomeBase = nomeArquivo.includes('/') ? nomeArquivo.slice(nomeArquivo.lastIndexOf('/') + 1) : nomeArquivo;
@@ -1907,7 +1990,7 @@ const MODELOS_CACHE_KEY = 'botql_editor_online_modelos_cache';
         carregarFicheiro, exportarFicheiroAtual,
         abrirMenu, fecharMenu, abrirDocumentacao,
         abrirPartilharBot, publicarOuAtualizar, partilharLinkBot, encurtarLinkBot,
-        abrirMeusBots, abrirAtividadeBot,
+        abrirMeusBots, abrirAtividadeBot, tentarPublicadosDeNovo,
         abrirEcraConta, copiarCodigoConta, confirmarRecuperarConta, irParaPremium,
         avancarParaPagamento, voltarParaBeneficios,
         abrirEcraPremium, fecharFolhaPremium, escolherComprovativo, enviarPedidoPremium,
