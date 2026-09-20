@@ -221,6 +221,16 @@ const MODELOS_CACHE_KEY = 'botql_editor_online_modelos_cache';
     // Arranque: cria conta nova ou recupera a existente. Se o servidor
     // estiver inacessível, o editor abre em modo local (sem limites
     // aplicados até haver ligação).
+    // O navegador não guarda quais bots já foram publicados (fica no
+    // servidor). Ao arrancar, pede-os de volta para o botão "Ver
+    // atividade" e o "Atualizar bot" funcionarem depois de recarregar.
+    async function carregarPublicados() {
+        try {
+            const r = await chamarConta('/api/botql/conta/recuperar', { codigo: obterCodigo() });
+            if (r.ok && r.dados.publicados) Object.assign(idsPublicadosMem, r.dados.publicados);
+        } catch (e) {}
+    }
+
     async function iniciarConta() {
         conta = conta || lerContaLocal();
         try {
@@ -241,6 +251,7 @@ const MODELOS_CACHE_KEY = 'botql_editor_online_modelos_cache';
             aplicarEstado(dados.estado);
             servidorOnline = true;
             erroServidor = '';
+            await carregarPublicados();
             return true;
         } catch (e) {
             servidorOnline = false;
@@ -1255,9 +1266,8 @@ const MODELOS_CACHE_KEY = 'botql_editor_online_modelos_cache';
                 '<span class="part-icone">' + SVG_ROBO_BRANCO + '</span>' +
                 '<span class="part-nome">' + escapeHtml(base) + '</span>' +
                 '</div>' +
-                (id
-                    ? '<button class="part-btn destaque" style="width:100%;margin-top:14px" onclick="abrirAtividadeBot(\'' + nomeAttr + '\')">Ver atividade</button>'
-                    : '<div class="part-link" style="margin-top:14px">Ainda não publicado. Publica para ver a atividade.</div>') +
+                '<button class="part-btn destaque" style="width:100%;margin-top:14px"' + (id ? '' : ' disabled') + ' onclick="abrirAtividadeBot(\'' + nomeAttr + '\')">Ver atividade</button>' +
+                (id ? '' : '<div class="part-link" style="margin-top:10px">Publica este bot para ver a atividade.</div>') +
                 '</div>';
         }).join('');
         abrirFolha('Meus bots', cartoes, '');
@@ -1305,8 +1315,10 @@ const MODELOS_CACHE_KEY = 'botql_editor_online_modelos_cache';
             '<div class="atv-grelha">' +
             '<div class="atv-caixa"><div class="atv-num">' + formatarNumero(st.recebidas) + '</div><div class="atv-rot">Mensagens recebidas</div></div>' +
             '<div class="atv-caixa"><div class="atv-num">' + formatarNumero(st.enviadas) + '</div><div class="atv-rot">Respostas enviadas</div></div>' +
+            '<div class="atv-caixa"><div class="atv-num">' + formatarNumero(st.likes) + '</div><div class="atv-rot">Gostei</div></div>' +
+            '<div class="atv-caixa"><div class="atv-num">' + formatarNumero(st.dislikes) + '</div><div class="atv-rot">Não gostei</div></div>' +
             '<div class="atv-caixa"><div class="atv-num">' + formatarNumero(st.visitantes) + '</div><div class="atv-rot">Visitas</div></div>' +
-            '<div class="atv-caixa"><div class="atv-num">' + satisf + '</div><div class="atv-rot">' + formatarNumero(st.likes) + ' gostos, ' + formatarNumero(st.dislikes) + ' não gostos</div></div>' +
+            '<div class="atv-caixa"><div class="atv-num">' + satisf + '</div><div class="atv-rot">Satisfação</div></div>' +
             '</div>' +
             (dias.length
                 ? '<div class="prem-secao">Últimos dias</div><div class="atv-grafico">' + barras + '</div>'
