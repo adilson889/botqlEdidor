@@ -1307,7 +1307,7 @@ const MODELOS_CACHE_KEY = 'botql_editor_online_modelos_cache';
                 '<div class="atv-dia">' + d.slice(8, 10) + '/' + d.slice(5, 7) + '</div></div>';
         }).join('');
         const votos = st.likes + st.dislikes;
-        const satisf = votos ? Math.round((st.likes / votos) * 100) + '%' : '-';
+        const satisf = votos ? Math.round((st.likes / votos) * 100) + '% de satisfação' : 'Sem votos ainda';
 
         abrirFolha('Atividade',
             '<div class="prem-titulo">' + escapeHtml(nomeBase) + '</div>' +
@@ -1316,7 +1316,9 @@ const MODELOS_CACHE_KEY = 'botql_editor_online_modelos_cache';
             '<div class="atv-caixa"><div class="atv-num">' + formatarNumero(st.recebidas) + '</div><div class="atv-rot">Mensagens recebidas</div></div>' +
             '<div class="atv-caixa"><div class="atv-num">' + formatarNumero(st.enviadas) + '</div><div class="atv-rot">Respostas enviadas</div></div>' +
             '<div class="atv-caixa"><div class="atv-num">' + formatarNumero(st.visitantes) + '</div><div class="atv-rot">Visitas</div></div>' +
-            '<div class="atv-caixa"><div class="atv-num">' + satisf + '</div><div class="atv-rot">' + formatarNumero(st.likes) + ' gostos, ' + formatarNumero(st.dislikes) + ' não gostos</div></div>' +
+            '<div class="atv-caixa"><div class="atv-num atv-num-like">' + formatarNumero(st.likes) + '</div><div class="atv-rot">Gostos</div></div>' +
+            '<div class="atv-caixa"><div class="atv-num atv-num-dislike">' + formatarNumero(st.dislikes) + '</div><div class="atv-rot">Não gostos</div></div>' +
+            '<div class="atv-caixa"><div class="atv-num atv-num-satisf">' + satisf + '</div><div class="atv-rot">Satisfação</div></div>' +
             '</div>' +
             (dias.length
                 ? '<div class="prem-secao">Últimos dias</div><div class="atv-grafico">' + barras + '</div>'
