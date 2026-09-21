@@ -22,6 +22,13 @@
 <svg viewBox="0 0 24 24" fill=none><path d="M4 7h16M4 12h16M4 17h16" stroke=#fff stroke-width=2 stroke-linecap=round /></svg>
 </button>
 </div>
+<div id=avisos-editor style="display:none">
+<button id=avisos-toggle onclick=alternarAvisos()>
+<span id=avisos-contagem></span>
+<span id=avisos-seta>▾</span>
+</button>
+<div id=avisos-lista></div>
+</div>
 <div id=editor-wrap>
 <pre id=editor-pre></pre>
 <textarea id=editor-area spellcheck=false autocorrect=off autocapitalize=off autocomplete=off wrap=soft></textarea>
